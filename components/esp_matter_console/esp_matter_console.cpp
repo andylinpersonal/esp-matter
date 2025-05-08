@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "portmacro.h"
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -135,6 +136,9 @@ static void ChipShellTask(void *args)
     chip::Shell::Engine::Root().RunMainLoop();
 }
 
+static StackType_t s_chip_shell_stack[CONFIG_ESP_MATTER_CONSOLE_TASK_STACK];
+static StaticTask_t s_chip_shell_tcb;
+
 esp_err_t init()
 {
     esp_err_t err = ESP_OK;
@@ -148,7 +152,7 @@ esp_err_t init()
         return err;
     }
     chip::Shell::Engine::Root().Init();
-    if (xTaskCreate(&ChipShellTask, "console", CONFIG_ESP_MATTER_CONSOLE_TASK_STACK, NULL, 5, NULL) != pdPASS) {
+    if (xTaskCreateStatic(&ChipShellTask, "console", CONFIG_ESP_MATTER_CONSOLE_TASK_STACK, NULL, 5, s_chip_shell_stack, &s_chip_shell_tcb) == NULL) {
         ESP_LOGE(TAG, "Couldn't create console task");
         err = ESP_FAIL;
     }
